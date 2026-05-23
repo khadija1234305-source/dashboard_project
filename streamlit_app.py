@@ -11,7 +11,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
+df = pd.read_csv("data/fatal-police-shootings-data.csv")
 # =========================
 # PASTEL ANIMATED UI STYLE
 # =========================
