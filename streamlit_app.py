@@ -77,7 +77,7 @@ st.markdown("""
 # LOAD DATASET
 # =========================
 
-df = pd.read_csv("data/fatal-police-shootings-data.csv")
+df = pd.read_csv("fatal-police-shootings-data.csv")
 
 # =========================
 # SIDEBAR FILTERS
