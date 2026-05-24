@@ -397,12 +397,17 @@ st.markdown("""
 # =========================
 # SHOW CLEAN DATA (OPTIONAL)
 # =========================
+# =========================
+# MAP VISUALIZATION
+# =========================
 
-with st.expander("View Raw Dataset"):
-    st.dataframe(filtered_df)
-    st.subheader("🗺️ Incident Map (Latitude vs Longitude)")
+st.subheader("🌍 Incident Map")
 
+# Create map dataframe safely
 map_df = filtered_df.dropna(subset=["latitude", "longitude"])
-map_df = filtered_df.dropna(subset=["latitude", "longitude"])
-st.map(map_df[["latitude", "longitude"]])
-st.markdown("---")
+
+# Show map only if data exists
+if not map_df.empty:
+    st.map(map_df[["latitude", "longitude"]])
+else:
+    st.warning("No location data available for selected filters.")
