@@ -401,13 +401,19 @@ st.markdown("""
 # MAP VISUALIZATION
 # =========================
 
+# =========================
+# MAP VISUALIZATION
+# =========================
+
 st.subheader("🌍 Incident Map")
 
-# Create map dataframe safely
-map_df = filtered_df.dropna(subset=["latitude", "longitude"])
+try:
+    map_df = filtered_df.dropna(subset=["latitude", "longitude"])
 
-# Show map only if data exists
-if not map_df.empty:
-    st.map(map_df[["latitude", "longitude"]])
-else:
-    st.warning("No location data available for selected filters.")
+    if not map_df.empty:
+        st.map(map_df[["latitude", "longitude"]])
+    else:
+        st.warning("No map data available.")
+
+except Exception as e:
+    st.error("Map could not load.")
