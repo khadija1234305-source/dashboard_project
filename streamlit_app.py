@@ -410,8 +410,8 @@ st.subheader("🌍 Incident Map")
 try:
     map_df = filtered_df.dropna(subset=["latitude", "longitude"])
 
-    if not map_df.empty:
-        st.map(map_df[["latitude", "longitude"]])
+    if not map_data.empty:
+        st.map(map_data[["latitude", "longitude"]])
     else:
         st.warning("No map data available.")
 
