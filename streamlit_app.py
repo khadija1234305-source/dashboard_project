@@ -363,15 +363,29 @@ with col4:
     st.subheader("Yearly Trends")
     st.pyplot(fig4)
 # =========================
-col5, col6 = st.columns([1,1])
+# =========================
+# MAP VISUALIZATION
+# =========================
 
-with col5:
-    st.subheader("🌍 Incident Map")
-    st.map(map_df[["latitude", "longitude"]])
+st.subheader("🌍 Incident Map")
 
-with col6:
-    st.subheader("📋 Data Table")
-    st.dataframe(filtered_df.head(100))
+if "latitude" in filtered_df.columns and "longitude" in filtered_df.columns:
+
+    map_data = filtered_df.dropna(
+        subset=["latitude", "longitude"]
+    )
+
+    if not map_data.empty:
+
+        st.map(
+            map_data[["latitude", "longitude"]]
+        )
+
+    else:
+        st.info("No map data available.")
+
+else:
+    st.warning("Latitude and Longitude columns not found.")
 # SCATTER PLOT
 # =========================
 
