@@ -169,11 +169,18 @@ if search:
         filtered_df.astype(str)
         .apply(lambda row: row.str.contains(search, case=False).any(), axis=1)
     ]
+# Safe Date Filter
 
-# Date Filter
-filtered_df = filtered_df[
-    (filtered_df["date"] >= pd.to_datetime(date_filter[0])) &
-    (filtered_df["date"] <= pd.to_datetime(date_filter[1]))
+filtered_df["date"] = pd.to_datetime(
+    filtered_df["date"],
+    errors="coerce"
+)
+
+start_date = pd.to_datetime(date_filter[0])
+end_date = pd.to_datetime(date_filter[1])
+
+filtered_df = filtered_df.loc[
+    filtered_df["date"].between(start_date, end_date)
 ]
 # =========================
 # KPI SECTION
