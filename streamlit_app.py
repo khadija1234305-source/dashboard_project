@@ -112,68 +112,34 @@ age_filter = st.sidebar.slider(
 # =========================
 # APPLY FILTERS
 # =========================
+# =========================
+# SAFE DATE FILTER
+# =========================
 
-filtered_df = df.copy()
-
-if gender_filter != "All":
-    filtered_df = filtered_df[
-        filtered_df["gender"] == gender_filter
-    ]
-
-if race_filter:
-    filtered_df = filtered_df[
-        filtered_df["race"].isin(race_filter)
-    ]
-
-filtered_df = filtered_df[
-    (filtered_df["age"] >= age_filter[0]) &
-    (filtered_df["age"] <= age_filter[1])
-]
-# State Filter
-state_filter = st.sidebar.multiselect(
-    "Select State",
-    df["state"].dropna().unique()
-)
-
-# Manner of Death Filter
-death_filter = st.sidebar.multiselect(
-    "Manner of Death",
-    df["manner_of_death"].dropna().unique()
-)
-
-# Search Filter
-search = st.sidebar.text_input("Search Keyword")
-
-# Date Filter
+# Convert date column safely
 df["date"] = pd.to_datetime(df["date"], errors="coerce")
+
+# Remove invalid dates
+df = df.dropna(subset=["date"])
+
+# Date range filter
+min_date = df["date"].min().date()
+max_date = df["date"].max().date()
 
 date_filter = st.sidebar.date_input(
     "Select Date Range",
-    [df["date"].min(), df["date"].max()]
+    value=(min_date, max_date),
+    min_value=min_date,
+    max_value=max_date
 )
-# State Filter
-if state_filter:
-    filtered_df = filtered_df[
-        filtered_df["state"].isin(state_filter)
-    ]
 
-# Death Filter
-if death_filter:
-    filtered_df = filtered_df[
-        filtered_df["manner_of_death"].isin(death_filter)
-    ]
+# Apply filter safely
+start_date = pd.to_datetime(date_filter[0])
+end_date = pd.to_datetime(date_filter[1])
 
-# Search Filter
-if search:
-    filtered_df = filtered_df[
-        filtered_df.astype(str)
-        .apply(lambda row: row.str.contains(search, case=False).any(), axis=1)
-    ]
-
-# Date Filter
 filtered_df = filtered_df[
-    (filtered_df["date"] >= pd.to_datetime(date_filter[0])) &
-    (filtered_df["date"] <= pd.to_datetime(date_filter[1]))
+    (pd.to_datetime(filtered_df["date"], errors="coerce") >= start_date) &
+    (pd.to_datetime(filtered_df["date"], errors="coerce") <= end_date)
 ]
 # =========================
 # KPI SECTION
