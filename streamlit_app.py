@@ -172,8 +172,35 @@ if search:
 
 # Date Filter
 filtered_df = filtered_df[
-    (filtered_df["date"] >= pd.to_datetime(date_filter[0])) &
-    (filtered_df["date"] <= pd.to_datetime(date_filter[1]))
+   # =========================
+# DATE FILTER
+# =========================
+
+# Convert date column safely
+df["date"] = pd.to_datetime(df["date"], errors="coerce")
+
+# Remove invalid dates
+df = df.dropna(subset=["date"])
+
+# Date range selector
+min_date = df["date"].min().date()
+max_date = df["date"].max().date()
+
+date_filter = st.sidebar.date_input(
+    "📅 Select Date Range",
+    value=(min_date, max_date),
+    min_value=min_date,
+    max_value=max_date
+)
+
+# Apply date filter safely
+start_date = pd.to_datetime(date_filter[0])
+end_date = pd.to_datetime(date_filter[1])
+
+filtered_df = filtered_df[
+    (pd.to_datetime(filtered_df["date"], errors="coerce") >= start_date) &
+    (pd.to_datetime(filtered_df["date"], errors="coerce") <= end_date)
+]
 ]
 # =========================
 # KPI SECTION
