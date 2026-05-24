@@ -145,7 +145,7 @@ death_filter = st.sidebar.multiselect(
 search = st.sidebar.text_input("Search Keyword")
 
 # Date Filter
-df["date"] = pd.to_datetime(df["date"])
+df["date"] = pd.to_datetime(df["date"], errors="coerce")
 
 date_filter = st.sidebar.date_input(
     "Select Date Range",
