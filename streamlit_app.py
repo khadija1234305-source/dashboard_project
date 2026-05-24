@@ -1,89 +1,90 @@
-import streamlit as st
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 
-# =========================
-# PAGE CONFIG
-# =========================
+import streamlit as st
+st.set_page_config(
+    page_title="Police Dashboard",
+    layout="wide",
+    page_icon="📊"
+)                        
 
 st.set_page_config(
-    page_title="Fatal Police Shootings Dashboard",
-    page_icon="🚨",
-    layout="wide"
+    page_title="Police Dashboard",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
-
+st.sidebar.markdown("## 🎛 Dashboard Controls")
+st.sidebar.markdown("---")
 # =========================
-# CUSTOM CSS
+# PASTEL ANIMATED UI STYLE
 # =========================
 
 st.markdown("""
 <style>
 
-.main {
-    background-color: #f8f6ff;
+/* Smooth animated gradient background */
+.stApp {
+    background: linear-gradient(-45deg, #a1c4fd, #c2e9fb, #fbc2eb, #f5f7fa);
+    background-size: 400% 400%;
+    animation: gradientBG 12s ease infinite;
+    color: #1f2937;
 }
 
-h1 {
-    color: #6c63ff;
-    text-align: center;
-    font-size: 45px;
+/* Animation keyframes */
+@keyframes gradientBG {
+    0% {background-position: 0% 50%;}
+    50% {background-position: 100% 50%;}
+    100% {background-position: 0% 50%;}
 }
 
-h2, h3 {
-    color: #444;
+/* Sidebar styling */
+section[data-testid="stSidebar"] {
+    background-color: #ffffffcc;
+    backdrop-filter: blur(10px);
 }
 
-[data-testid="stSidebar"] {
-    background-color: #efeaff;
+/* KPI cards styling */
+div[data-testid="metric-container"] {
+    background-color: #ffffffaa;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
 }
 
-.stMetric {
+/* Dataframe styling */
+.stDataFrame {
     background-color: white;
-    padding: 15px;
-    border-radius: 15px;
-    box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
-}
-
-div[data-testid="stPlotlyChart"] {
-    background-color: white;
-    border-radius: 15px;
-    padding: 10px;
+    border-radius: 10px;
 }
 
 </style>
 """, unsafe_allow_html=True)
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
 
 # =========================
-# TITLE
+# PAGE TITLE
 # =========================
-
-st.title("🚨 Fatal Police Shootings Dashboard")
 
 st.markdown("""
-### Interactive dashboard for analyzing fatal police shooting incidents across the United States.
-""")
+<h1 style='text-align: center; color: #6C63FF;'>
+🚨 Fatal Police Shootings Dashboard
+</h1>
+<p style='text-align: center; font-size:18px;'>
+📊 Interactive Analytics | 🌍 Visual Insights | 🔥 Real Data Exploration
+</p>
+""", unsafe_allow_html=True)
 
 # =========================
-# LOAD DATA
+# LOAD DATASET
 # =========================
 
-df = pd.read_csv("data/fatal-police-shootings-data.csv")
+df = pd.read_csv("fatal-police-shootings-data.csv")
 
 # =========================
-# DATA CLEANING
+# SIDEBAR FILTERS
 # =========================
 
-df["date"] = pd.to_datetime(df["date"], errors="coerce")
-
-df = df.dropna(subset=["date"])
-
-# =========================
-# SIDEBAR
-# =========================
-
-st.sidebar.title("🎛 Dashboard Filters")
+st.sidebar.header("Filters")
 
 # Gender Filter
 gender_filter = st.sidebar.selectbox(
@@ -97,278 +98,337 @@ race_filter = st.sidebar.multiselect(
     df["race"].dropna().unique()
 )
 
+# Age Slider
+age_filter = st.sidebar.slider(
+    "Select Age Range",
+    int(df["age"].min()),
+    int(df["age"].max()),
+    (
+        int(df["age"].min()),
+        int(df["age"].max())
+    )
+)
+
+# =========================
+# APPLY FILTERS
+# =========================
+
+filtered_df = df.copy()
+
+if gender_filter != "All":
+    filtered_df = filtered_df[
+        filtered_df["gender"] == gender_filter
+    ]
+
+if race_filter:
+    filtered_df = filtered_df[
+        filtered_df["race"].isin(race_filter)
+    ]
+
+filtered_df = filtered_df[
+    (filtered_df["age"] >= age_filter[0]) &
+    (filtered_df["age"] <= age_filter[1])
+]
 # State Filter
 state_filter = st.sidebar.multiselect(
     "Select State",
     df["state"].dropna().unique()
 )
 
-# Manner of Death
+# Manner of Death Filter
 death_filter = st.sidebar.multiselect(
     "Manner of Death",
     df["manner_of_death"].dropna().unique()
 )
 
-# Age Slider
-min_age = int(df["age"].min())
-max_age = int(df["age"].max())
-
-age_filter = st.sidebar.slider(
-    "Select Age Range",
-    min_age,
-    max_age,
-    (min_age, max_age)
-)
-
 # Search Filter
-search = st.sidebar.text_input("🔍 Search Keyword")
+search = st.sidebar.text_input("Search Keyword")
 
 # Date Filter
-min_date = df["date"].min().date()
-max_date = df["date"].max().date()
+df["date"] = pd.to_datetime(df["date"])
 
 date_filter = st.sidebar.date_input(
-    "📅 Select Date Range",
-    value=(min_date, max_date),
-    min_value=min_date,
-    max_value=max_date
+    "Select Date Range",
+    [df["date"].min(), df["date"].max()]
 )
-
-# =========================
-# FILTER DATA
-# =========================
-
-filtered_df = df.copy()
-
-# Gender
-if gender_filter != "All":
-    filtered_df = filtered_df[
-        filtered_df["gender"] == gender_filter
-    ]
-
-# Race
-if race_filter:
-    filtered_df = filtered_df[
-        filtered_df["race"].isin(race_filter)
-    ]
-
-# State
+# State Filter
 if state_filter:
     filtered_df = filtered_df[
         filtered_df["state"].isin(state_filter)
     ]
 
-# Manner of Death
+# Death Filter
 if death_filter:
     filtered_df = filtered_df[
         filtered_df["manner_of_death"].isin(death_filter)
     ]
 
-# Age
-filtered_df = filtered_df[
-    (filtered_df["age"] >= age_filter[0]) &
-    (filtered_df["age"] <= age_filter[1])
-]
-
-# Search
+# Search Filter
 if search:
     filtered_df = filtered_df[
         filtered_df.astype(str)
-        .apply(
-            lambda row: row.str.contains(
-                search,
-                case=False
-            ).any(),
-            axis=1
-        )
+        .apply(lambda row: row.str.contains(search, case=False).any(), axis=1)
     ]
 
-# Date
-start_date = pd.to_datetime(date_filter[0])
-end_date = pd.to_datetime(date_filter[1])
-
+# Date Filter
 filtered_df = filtered_df[
-    (filtered_df["date"] >= start_date) &
-    (filtered_df["date"] <= end_date)
+    (filtered_df["date"] >= pd.to_datetime(date_filter[0])) &
+    (filtered_df["date"] <= pd.to_datetime(date_filter[1]))
 ]
-
 # =========================
-# KPI CARDS
+# KPI SECTION
 # =========================
 
 total_cases = len(filtered_df)
 
-average_age = round(filtered_df["age"].mean(), 1)
+average_age = round(filtered_df['age'].mean(), 1)
 
 most_common_gender = (
-    filtered_df["gender"]
-    .mode()[0]
-    if not filtered_df["gender"].mode().empty
-    else "N/A"
+    filtered_df['gender'].mode()[0]
+    if not filtered_df.empty else "N/A"
 )
 
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.metric("🔥 Total Cases", total_cases)
-
-with col2:
-    st.metric("📊 Average Age", average_age)
-
-with col3:
-    st.metric("👥 Common Gender", most_common_gender)
-
-# =========================
-# CHARTS ROW 1
-# =========================
-
-col4, col5 = st.columns(2)
-
-with col4:
-
-    st.subheader("🥧 Manner of Death Distribution")
-
-    fig1, ax1 = plt.subplots(figsize=(6,6))
-
-    filtered_df["manner_of_death"] \
-        .value_counts() \
-        .plot.pie(
-            autopct='%1.1f%%',
-            ax=ax1
-        )
-
-    ax1.set_ylabel("")
-
-    st.pyplot(fig1)
-
-with col5:
-
-    st.subheader("📈 Age Distribution")
-
-    fig2, ax2 = plt.subplots(figsize=(7,5))
-
-    sns.histplot(
-        filtered_df["age"].dropna(),
-        bins=20,
-        kde=True,
-        ax=ax2
-    )
-
-    st.pyplot(fig2)
-
-# =========================
-# CHARTS ROW 2
-# =========================
-
-col6, col7 = st.columns(2)
-
-with col6:
-
-    st.subheader("📊 Top States")
-
-    top_states = filtered_df["state"] \
-        .value_counts() \
-        .head(10)
-
-    fig3, ax3 = plt.subplots(figsize=(7,5))
-
-    sns.barplot(
-        x=top_states.values,
-        y=top_states.index,
-        ax=ax3
-    )
-
-    st.pyplot(fig3)
-
-with col7:
-
-    st.subheader("📉 Yearly Trends")
-
-    yearly = filtered_df.groupby(
-        filtered_df["date"].dt.year
-    ).size()
-
-    fig4, ax4 = plt.subplots(figsize=(7,5))
-
-    yearly.plot(
-        kind="line",
-        marker="o",
-        ax=ax4
-    )
-
-    st.pyplot(fig4)
-
-# =========================
-# HEATMAP
-# =========================
-
-st.subheader("🔥 Correlation Heatmap")
-
-numeric_df = filtered_df.select_dtypes(include=np.number)
-
-fig5, ax5 = plt.subplots(figsize=(10,6))
-
-sns.heatmap(
-    numeric_df.corr(),
-    annot=True,
-    cmap="coolwarm",
-    ax=ax5
+most_common_race = (
+    filtered_df['race'].mode()[0]
+    if not filtered_df.empty else "N/A"
 )
 
-st.pyplot(fig5)
 
-# =========================
-# MAP + TABLE
-# =========================
+col1, col2, col3, col4 = st.columns(4)
 
-col8, col9 = st.columns(2)
+col1.metric("🔥 Total Cases", total_cases)
 
-with col8:
+col2.metric("📊 Average Age", average_age)
 
-    st.subheader("🌍 Incident Map")
+col3.metric("👥 Common Gender", most_common_gender)
 
-    if "latitude" in filtered_df.columns and "longitude" in filtered_df.columns:
-
-        map_data = filtered_df.dropna(
-            subset=["latitude", "longitude"]
-        )
-
-        if not map_data.empty:
-            st.map(map_data[["latitude", "longitude"]])
-
-        else:
-            st.warning("No map data available.")
-
-with col9:
-
-    st.subheader("📋 Data Table")
-
-    st.dataframe(
-        filtered_df.head(100),
-        use_container_width=True,
-        height=400
-    )
-
-# =========================
-# DOWNLOAD BUTTON
-# =========================
-
-csv = filtered_df.to_csv(index=False)
-
+col4.metric("🌍 Common Race", most_common_race)
 st.download_button(
     label="📥 Download Filtered Data",
-    data=csv,
+    data=filtered_df.to_csv(index=False),
     file_name="filtered_data.csv",
     mime="text/csv"
 )
 
 # =========================
-# FOOTER
+# CHART LAYOUT
 # =========================
 
-st.markdown("---")
+col_chart1, col_chart2 = st.columns(2)
 
-st.markdown(
-    "<center>Made with ❤️ using Streamlit</center>",
-    unsafe_allow_html=True
+# =========================
+# PIE CHART
+# =========================
+
+with col_chart1:
+
+    st.subheader("Manner of Death Distribution")
+
+    fig1, ax1 = plt.subplots(figsize=(5,5))
+
+    death_counts = filtered_df["manner_of_death"].value_counts()
+
+    ax1.pie(
+        death_counts,
+        labels=death_counts.index,
+        autopct='%1.1f%%'
+    )
+
+    st.pyplot(fig1)
+
+# =========================
+# HISTOGRAM
+# =========================
+
+with col_chart2:
+
+    st.subheader("Age Distribution")
+
+    fig2, ax2 = plt.subplots(figsize=(6,5))
+
+    ax2.hist(
+        filtered_df["age"].dropna(),
+        bins=20
+    )
+
+    ax2.set_xlabel("Age")
+
+    ax2.set_ylabel("Frequency")
+
+    ax2.set_title("Distribution of Age")
+
+    st.pyplot(fig2)
+
+# =========================
+# BAR CHART
+# =========================
+
+st.subheader("Top 10 States by Shootings")
+
+state_counts = (
+    filtered_df["state"]
+    .value_counts()
+    .head(10)
 )
+
+fig3, ax3 = plt.subplots(figsize=(10,5))
+
+ax3.bar(
+    state_counts.index,
+    state_counts.values
+)
+
+ax3.set_xlabel("State")
+
+ax3.set_ylabel("Cases")
+
+ax3.set_title("Top 10 States")
+
+st.pyplot(fig3)
+
+# =========================
+# SHOW DATA
+# =========================
+
+# =========================
+# BEAUTIFUL DATA TABLE
+# =========================
+
+st.subheader("📋 Filtered Data Table")
+
+styled_df = filtered_df.copy()
+
+# Clean column names (optional improvement)
+styled_df.columns = [col.replace("_", " ").title() for col in styled_df.columns]
+
+st.dataframe(
+    styled_df,
+    use_container_width=True,
+    height=400
+)
+
+# =========================
+# LINE CHART (TIME TREND)
+# =========================
+
+st.subheader("Trend Over Time")
+
+df["date"] = pd.to_datetime(df["date"], errors="coerce")
+
+trend = df.groupby(df["date"].dt.year).size()
+
+fig4, ax4 = plt.subplots(figsize=(10,5))
+
+ax4.plot(trend.index, trend.values, marker="o")
+
+ax4.set_xlabel("Year")
+
+ax4.set_ylabel("Number of Cases")
+
+ax4.set_title("Shootings Over Time")
+
+st.pyplot(fig4)
+# =========================
+# ROW 1
+# =========================
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.subheader("Manner of Death")
+    st.pyplot(fig1)
+
+with col2:
+    st.subheader("Age Distribution")
+    st.pyplot(fig2)
+
+# =========================
+# ROW 2
+# =========================
+
+col3, col4 = st.columns(2)
+
+with col3:
+    st.subheader("Top States")
+    st.pyplot(fig3)
+
+with col4:
+    st.subheader("Yearly Trends")
+    st.pyplot(fig4)
+# =========================
+col5, col6 = st.columns([1,1])
+
+with col5:
+    st.subheader("🌍 Incident Map")
+    st.map(map_df[["latitude", "longitude"]])
+
+with col6:
+    st.subheader("📋 Data Table")
+    st.dataframe(filtered_df.head(100))
+# SCATTER PLOT
+# =========================
+
+st.subheader("Age vs Cases Relationship")
+
+scatter_df = filtered_df.dropna(subset=["age"])
+
+fig5, ax5 = plt.subplots(figsize=(8,5))
+
+ax5.scatter(
+    scatter_df["age"],
+    range(len(scatter_df)),
+    alpha=0.5
+)
+
+ax5.set_xlabel("Age")
+
+ax5.set_ylabel("Cases Index")
+
+ax5.set_title("Age Distribution Scatter Plot")
+
+st.pyplot(fig5)
+# =========================
+# HEATMAP
+# =========================
+
+st.subheader("Correlation Heatmap")
+
+numeric_df = filtered_df.select_dtypes(include=["number"])
+
+fig6, ax6 = plt.subplots(figsize=(8,5))
+
+import seaborn as sns
+
+sns.heatmap(
+    numeric_df.corr(),
+    annot=True,
+    cmap="coolwarm",
+    ax=ax6
+)
+
+st.pyplot(fig6)
+# =========================
+# INSIGHTS SECTION
+# =========================
+
+st.subheader("Key Insights")
+
+st.markdown("""
+- This dashboard analyzes fatal police shooting incidents.
+- You can filter data by gender, race, and age.
+- Charts automatically update based on filters.
+- Trends show how incidents change over time.
+""")
+
+# =========================
+# SHOW CLEAN DATA (OPTIONAL)
+# =========================
+
+with st.expander("View Raw Dataset"):
+    st.dataframe(filtered_df)
+    st.subheader("🗺️ Incident Map (Latitude vs Longitude)")
+
+map_df = filtered_df.dropna(subset=["latitude", "longitude"])
+
+st.map(map_df[["latitude", "longitude"]])
+st.markdown("---")
