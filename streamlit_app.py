@@ -136,7 +136,7 @@ date_filter = st.sidebar.date_input(
 # Apply filter safely
 start_date = pd.to_datetime(date_filter[0])
 end_date = pd.to_datetime(date_filter[1])
-
+filtered_df = df.copy()
 filtered_df = filtered_df[
     (pd.to_datetime(filtered_df["date"], errors="coerce") >= start_date) &
     (pd.to_datetime(filtered_df["date"], errors="coerce") <= end_date)
