@@ -112,34 +112,68 @@ age_filter = st.sidebar.slider(
 # =========================
 # APPLY FILTERS
 # =========================
-# =========================
-# SAFE DATE FILTER
-# =========================
 
-# Convert date column safely
-df["date"] = pd.to_datetime(df["date"], errors="coerce")
+filtered_df = df.copy()
 
-# Remove invalid dates
-df = df.dropna(subset=["date"])
+if gender_filter != "All":
+    filtered_df = filtered_df[
+        filtered_df["gender"] == gender_filter
+    ]
 
-# Date range filter
-min_date = df["date"].min().date()
-max_date = df["date"].max().date()
+if race_filter:
+    filtered_df = filtered_df[
+        filtered_df["race"].isin(race_filter)
+    ]
+
+filtered_df = filtered_df[
+    (filtered_df["age"] >= age_filter[0]) &
+    (filtered_df["age"] <= age_filter[1])
+]
+# State Filter
+state_filter = st.sidebar.multiselect(
+    "Select State",
+    df["state"].dropna().unique()
+)
+
+# Manner of Death Filter
+death_filter = st.sidebar.multiselect(
+    "Manner of Death",
+    df["manner_of_death"].dropna().unique()
+)
+
+# Search Filter
+search = st.sidebar.text_input("Search Keyword")
+
+# Date Filter
+df["date"] = pd.to_datetime(df["date"])
 
 date_filter = st.sidebar.date_input(
     "Select Date Range",
-    value=(min_date, max_date),
-    min_value=min_date,
-    max_value=max_date
+    [df["date"].min(), df["date"].max()]
 )
+# State Filter
+if state_filter:
+    filtered_df = filtered_df[
+        filtered_df["state"].isin(state_filter)
+    ]
 
-# Apply filter safely
-start_date = pd.to_datetime(date_filter[0])
-end_date = pd.to_datetime(date_filter[1])
-filtered_df = df.copy()
+# Death Filter
+if death_filter:
+    filtered_df = filtered_df[
+        filtered_df["manner_of_death"].isin(death_filter)
+    ]
+
+# Search Filter
+if search:
+    filtered_df = filtered_df[
+        filtered_df.astype(str)
+        .apply(lambda row: row.str.contains(search, case=False).any(), axis=1)
+    ]
+
+# Date Filter
 filtered_df = filtered_df[
-    (pd.to_datetime(filtered_df["date"], errors="coerce") >= start_date) &
-    (pd.to_datetime(filtered_df["date"], errors="coerce") <= end_date)
+    (filtered_df["date"] >= pd.to_datetime(date_filter[0])) &
+    (filtered_df["date"] <= pd.to_datetime(date_filter[1]))
 ]
 # =========================
 # KPI SECTION
@@ -159,15 +193,7 @@ most_common_race = (
     if not filtered_df.empty else "N/A"
 )
 
-col1, col2, col3, col4 = st.columns(4)
 
-col1.metric("Total Cases", total_cases)
-
-col2.metric("Average Age", average_age)
-
-col3.metric("Common Gender", most_common_gender)
-
-col4.metric("Common Race", most_common_race)
 col1, col2, col3, col4 = st.columns(4)
 
 col1.metric("🔥 Total Cases", total_cases)
@@ -334,23 +360,7 @@ col5, col6 = st.columns([1,1])
 
 with col5:
     st.subheader("🌍 Incident Map")
-   # =========================
-# MAP VISUALIZATION
-# =========================
-
-st.subheader("🌍 Incident Map")
-
-if "latitude" in filtered_df.columns and "longitude" in filtered_df.columns:
-
-    map_data = filtered_df.dropna(subset=["latitude", "longitude"])
-
-    if len(map_data) > 0:
-        st.map(map_data[["latitude", "longitude"]])
-    else:
-        st.info("No location data available.")
-
-else:
-    st.warning("Latitude/Longitude columns missing.")
+    st.map(map_df[["latitude", "longitude"]])
 
 with col6:
     st.subheader("📋 Data Table")
@@ -413,23 +423,12 @@ st.markdown("""
 # =========================
 # SHOW CLEAN DATA (OPTIONAL)
 # =========================
-# =========================
-# MAP VISUALIZATION
-# =========================
 
-# =========================
-# MAP VISUALIZATION
-# =========================
+with st.expander("View Raw Dataset"):
+    st.dataframe(filtered_df)
+    st.subheader("🗺️ Incident Map (Latitude vs Longitude)")
 
-st.subheader("🌍 Incident Map")
+map_df = filtered_df.dropna(subset=["latitude", "longitude"])
 
-try:
-    map_df = filtered_df.dropna(subset=["latitude", "longitude"])
-
-    if not map_data.empty:
-        st.map(map_data[["latitude", "longitude"]])
-    else:
-        st.warning("No map data available.")
-
-except Exception as e:
-    st.error("Map could not load.")
+st.map(map_df[["latitude", "longitude"]])
+st.markdown("---")
