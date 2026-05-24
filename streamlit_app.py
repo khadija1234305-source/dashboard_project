@@ -186,7 +186,7 @@ filtered_df = filtered_df.loc[
 # KPI SECTION
 # =========================
 
-total_cases = len(filtered_df)
+total_cases = len(df)
 
 average_age = round(filtered_df['age'].mean(), 1)
 
