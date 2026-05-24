@@ -334,7 +334,23 @@ col5, col6 = st.columns([1,1])
 
 with col5:
     st.subheader("🌍 Incident Map")
-   
+   # =========================
+# MAP VISUALIZATION
+# =========================
+
+st.subheader("🌍 Incident Map")
+
+if "latitude" in filtered_df.columns and "longitude" in filtered_df.columns:
+
+    map_data = filtered_df.dropna(subset=["latitude", "longitude"])
+
+    if len(map_data) > 0:
+        st.map(map_data[["latitude", "longitude"]])
+    else:
+        st.info("No location data available.")
+
+else:
+    st.warning("Latitude/Longitude columns missing.")
 
 with col6:
     st.subheader("📋 Data Table")
