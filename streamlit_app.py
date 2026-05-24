@@ -403,6 +403,6 @@ with st.expander("View Raw Dataset"):
     st.subheader("🗺️ Incident Map (Latitude vs Longitude)")
 
 map_df = filtered_df.dropna(subset=["latitude", "longitude"])
-
+map_df = filtered_df.dropna(subset=["latitude", "longitude"])
 st.map(map_df[["latitude", "longitude"]])
 st.markdown("---")
