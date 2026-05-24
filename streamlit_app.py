@@ -334,7 +334,7 @@ col5, col6 = st.columns([1,1])
 
 with col5:
     st.subheader("🌍 Incident Map")
-    st.map(map_df[["latitude", "longitude"]])
+   
 
 with col6:
     st.subheader("📋 Data Table")
